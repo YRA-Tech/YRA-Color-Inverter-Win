@@ -241,23 +241,21 @@ namespace ColorInverter
             System.Windows.MessageBox.Show($"Creating overlay at:\nLeft: {simpleOverlay.Left}\nTop: {simpleOverlay.Top}\nSize: {simpleOverlay.Width}x{simpleOverlay.Height}\nDPI Scale: {dpiScale.DpiScaleX}x{dpiScale.DpiScaleY}", 
                 "Overlay Debug", MessageBoxButton.OK, MessageBoxImage.Information);
             
-            // Temporarily use text instead of image for debugging
-            var textBlock = new System.Windows.Controls.TextBlock
+            // Create image control for screen capture display
+            overlayImage = new System.Windows.Controls.Image
             {
-                Text = "OVERLAY WINDOW TEST",
-                FontSize = 24,
-                Foreground = System.Windows.Media.Brushes.White,
+                Stretch = System.Windows.Media.Stretch.Fill,
                 HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
                 VerticalAlignment = System.Windows.VerticalAlignment.Center
             };
             
-            simpleOverlay.Content = textBlock;
+            simpleOverlay.Content = overlayImage;
             simpleOverlay.Show();
             simpleOverlay.Activate();
             simpleOverlay.Focus();
             
-            // TODO: Start screen capture
-            // StartScreenCapture(monitor);
+            // Start screen capture for the overlay
+            StartScreenCapture(monitor);
         }
 
         private void StartScreenCapture(MonitorManager.MonitorData monitor)
@@ -285,9 +283,9 @@ namespace ColorInverter
             try
             {
                 // Calculate physical coordinates for screen capture
-                // We need to capture the 400x400 logical area converted to physical pixels
-                var physicalX = (int)(monitor.LogicalBounds.X * monitor.DpiScale);
-                var physicalY = (int)(monitor.LogicalBounds.Y * monitor.DpiScale);
+                // Capture 400x400 logical pixels from upper-left corner of monitor
+                var physicalX = monitor.PhysicalBounds.X;  // Upper-left X of monitor
+                var physicalY = monitor.PhysicalBounds.Y;  // Upper-left Y of monitor
                 var physicalWidth = (int)(400 * monitor.DpiScale);
                 var physicalHeight = (int)(400 * monitor.DpiScale);
                 
@@ -323,22 +321,24 @@ namespace ColorInverter
         
         private BitmapSource ConvertToBitmapSource(Bitmap bitmap)
         {
-            var bitmapData = bitmap.LockBits(
-                new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height),
-                ImageLockMode.ReadOnly, bitmap.PixelFormat);
-
-            var bitmapSource = BitmapSource.Create(
-                bitmapData.Width, bitmapData.Height,
-                96, 96,
-                System.Windows.Media.PixelFormats.Bgra32,
-                null,
-                bitmapData.Scan0,
-                bitmapData.Stride * bitmapData.Height,
-                bitmapData.Stride);
-
-            bitmap.UnlockBits(bitmapData);
-            return bitmapSource;
+            // Use more efficient GDI+ approach similar to Opus's suggestion
+            var hBitmap = bitmap.GetHbitmap();
+            try
+            {
+                return Imaging.CreateBitmapSourceFromHBitmap(
+                    hBitmap,
+                    IntPtr.Zero,
+                    Int32Rect.Empty,
+                    BitmapSizeOptions.FromEmptyOptions());
+            }
+            finally
+            {
+                DeleteObject(hBitmap);
+            }
         }
+
+        [DllImport("gdi32.dll")]
+        private static extern bool DeleteObject(IntPtr hObject);
 
         private (double DpiScaleX, double DpiScaleY) GetDpiScale(Screen screen)
         {
