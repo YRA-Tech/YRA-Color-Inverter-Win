@@ -213,13 +213,13 @@ namespace ColorInverter
                 return;
             }
             
-            // Get DPI scale factor for this monitor
-            var dpiScale = GetDpiScale(matchingScreen);
+            // Use DPI scale factor from MonitorData (already calculated correctly)
+            var dpiScale = monitor.DpiScale;
             
             // Calculate position in WPF units (device-independent pixels)
             // Monitor bounds are in physical pixels, convert to logical pixels
-            var leftPosition = matchingScreen.Bounds.Left / dpiScale.DpiScaleX;
-            var topPosition = matchingScreen.Bounds.Top / dpiScale.DpiScaleY;
+            var leftPosition = matchingScreen.Bounds.Left / dpiScale;
+            var topPosition = matchingScreen.Bounds.Top / dpiScale;
             
             // Create 400x400 overlay at upper-left corner of selected monitor
             simpleOverlay = new Window
@@ -239,7 +239,7 @@ namespace ColorInverter
             };
             
             // Debug: Show window creation info
-            System.Windows.MessageBox.Show($"Creating overlay at:\nLeft: {simpleOverlay.Left}\nTop: {simpleOverlay.Top}\nSize: {simpleOverlay.Width}x{simpleOverlay.Height}\nDPI Scale: {dpiScale.DpiScaleX}x{dpiScale.DpiScaleY}", 
+            System.Windows.MessageBox.Show($"Creating overlay at:\nLeft: {simpleOverlay.Left}\nTop: {simpleOverlay.Top}\nSize: {simpleOverlay.Width}x{simpleOverlay.Height}\nDPI Scale: {dpiScale}x{dpiScale}\nMonitor: {monitor.Name}", 
                 "Overlay Debug", MessageBoxButton.OK, MessageBoxImage.Information);
             
             // Create image control for screen capture display
@@ -263,6 +263,9 @@ namespace ColorInverter
         {
             // Stop any existing timer
             StopScreenCapture();
+            
+            // Debug: Confirm screen capture is starting
+            System.Diagnostics.Debug.WriteLine($"Starting screen capture for monitor: {monitor.Name}");
             
             // Start timer to capture screen at 30 FPS
             captureTimer = new System.Threading.Timer(
@@ -290,6 +293,9 @@ namespace ColorInverter
                 var physicalWidth = (int)(400 * monitor.DpiScale);
                 var physicalHeight = (int)(400 * monitor.DpiScale);
                 
+                // Debug: Show capture info once
+                System.Diagnostics.Debug.WriteLine($"Capturing: X={physicalX}, Y={physicalY}, W={physicalWidth}, H={physicalHeight}, DPI={monitor.DpiScale}");
+                
                 // Capture screen
                 using (var bitmap = new Bitmap(physicalWidth, physicalHeight, PixelFormat.Format32bppArgb))
                 {
@@ -309,14 +315,20 @@ namespace ColorInverter
                         if (overlayImage != null)
                         {
                             overlayImage.Source = bitmapSource;
+                            System.Diagnostics.Debug.WriteLine($"Updated overlay image: {bitmapSource.Width}x{bitmapSource.Height}");
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine("overlayImage is null!");
                         }
                     });
                 }
             }
             catch (Exception ex)
             {
-                // Handle any errors silently or log them
+                // Show actual error details
                 System.Diagnostics.Debug.WriteLine($"Screen capture error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
             }
         }
         
