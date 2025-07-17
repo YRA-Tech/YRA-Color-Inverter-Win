@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "bEQ9p5cqvv4=",
+  "success": true,
+  "projectFilePath": "/home/witt/code/YRA-Color-Inverter-Win/ColorInverter.csproj",
+  "expectedPackageFiles": [
+    "/home/witt/.nuget/packages/microsoft.win32.systemevents/8.0.0/microsoft.win32.systemevents.8.0.0.nupkg.sha512",
+    "/home/witt/.nuget/packages/system.drawing.common/8.0.0/system.drawing.common.8.0.0.nupkg.sha512",
+    "/home/witt/.nuget/packages/system.windows.extensions/8.0.0/system.windows.extensions.8.0.0.nupkg.sha512",
+    "/home/witt/.nuget/packages/microsoft.netcore.app.ref/8.0.18/microsoft.netcore.app.ref.8.0.18.nupkg.sha512",
+    "/home/witt/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.18/microsoft.aspnetcore.app.ref.8.0.18.nupkg.sha512",
+    "/home/witt/.nuget/packages/microsoft.netcore.app.host.linux-x64/8.0.18/microsoft.netcore.app.host.linux-x64.8.0.18.nupkg.sha512"
+  ],
+  "logs": []
+}
