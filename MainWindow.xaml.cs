@@ -44,7 +44,7 @@ namespace ColorInverter
             }
             
             // Show debug info popup on startup
-            MessageBox.Show(monitorManager.GetDebugInfo(), "Monitor Detection Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show(monitorManager.GetDebugInfo(), "Monitor Detection Debug", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
@@ -89,7 +89,7 @@ namespace ColorInverter
                     inverterCore.Start();
                     
                     // Create simple 400x400 overlay window
-                    Application.Current.Dispatcher.Invoke(() =>
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
                         CreateSimpleOverlay(selectedMonitor);
                     });
@@ -127,7 +127,7 @@ namespace ColorInverter
                 var monitors = monitorManager.GetMonitors();
                 if (monitors.Count == 0)
                 {
-                    MessageBox.Show("No monitors detected", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show("No monitors detected", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
@@ -146,7 +146,7 @@ namespace ColorInverter
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to start detection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Failed to start detection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -185,7 +185,13 @@ namespace ColorInverter
             if (matchingScreen == null)
             {
                 // Fallback to primary screen
-                matchingScreen = Screen.PrimaryScreen;
+                matchingScreen = Screen.PrimaryScreen ?? Screen.AllScreens.FirstOrDefault();
+            }
+            
+            if (matchingScreen == null)
+            {
+                // No screens available - this shouldn't happen but handle gracefully
+                return;
             }
             
             // Get DPI scale factor for this monitor
@@ -214,7 +220,7 @@ namespace ColorInverter
             };
             
             // Debug: Show window creation info
-            MessageBox.Show($"Creating overlay at:\nLeft: {simpleOverlay.Left}\nTop: {simpleOverlay.Top}\nSize: {simpleOverlay.Width}x{simpleOverlay.Height}\nDPI Scale: {dpiScale.DpiScaleX}x{dpiScale.DpiScaleY}", 
+            System.Windows.MessageBox.Show($"Creating overlay at:\nLeft: {simpleOverlay.Left}\nTop: {simpleOverlay.Top}\nSize: {simpleOverlay.Width}x{simpleOverlay.Height}\nDPI Scale: {dpiScale.DpiScaleX}x{dpiScale.DpiScaleY}", 
                 "Overlay Debug", MessageBoxButton.OK, MessageBoxImage.Information);
             
             // Temporarily use text instead of image for debugging
@@ -223,8 +229,8 @@ namespace ColorInverter
                 Text = "OVERLAY WINDOW TEST",
                 FontSize = 24,
                 Foreground = System.Windows.Media.Brushes.White,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                VerticalAlignment = System.Windows.VerticalAlignment.Center
             };
             
             simpleOverlay.Content = textBlock;
@@ -281,7 +287,7 @@ namespace ColorInverter
                     var bitmapSource = ConvertToBitmapSource(bitmap);
                     
                     // Update UI on main thread
-                    Application.Current.Dispatcher.BeginInvoke(() =>
+                    System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                     {
                         if (overlayImage != null)
                         {
