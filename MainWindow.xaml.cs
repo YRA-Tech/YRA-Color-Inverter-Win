@@ -296,7 +296,11 @@ namespace ColorInverter
                                    $"Capture coords: X={physicalX}, Y={physicalY}\n" +
                                    $"Capture size: W={physicalWidth}, H={physicalHeight}";
                     
-                    System.Windows.MessageBox.Show(debugInfo, "Screen Capture Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+                    // Show debug info on UI thread
+                    System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                    {
+                        System.Windows.MessageBox.Show(debugInfo, "Screen Capture Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+                    });
                 }
                 
                 // Capture screen
@@ -313,8 +317,11 @@ namespace ColorInverter
                         catch (Exception screenCaptureEx)
                         {
                             // If screen capture fails, fill with red for debugging
-                            System.Windows.MessageBox.Show($"Screen capture failed: {screenCaptureEx.Message}", 
-                                "Screen Capture Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                            {
+                                System.Windows.MessageBox.Show($"Screen capture failed: {screenCaptureEx.Message}", 
+                                    "Screen Capture Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            });
                             graphics.Clear(Color.Red);
                             using (var brush = new SolidBrush(Color.White))
                             using (var font = new Font("Arial", 16))
@@ -358,9 +365,12 @@ namespace ColorInverter
             }
             catch (Exception ex)
             {
-                // Show actual error details
-                System.Windows.MessageBox.Show($"Screen capture error: {ex.Message}\n\nStack trace: {ex.StackTrace}", 
-                    "Screen Capture Exception", MessageBoxButton.OK, MessageBoxImage.Error);
+                // Show actual error details on UI thread
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    System.Windows.MessageBox.Show($"Screen capture error: {ex.Message}\n\nStack trace: {ex.StackTrace}", 
+                        "Screen Capture Exception", MessageBoxButton.OK, MessageBoxImage.Error);
+                });
             }
         }
         

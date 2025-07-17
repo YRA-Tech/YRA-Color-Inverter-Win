@@ -109,10 +109,28 @@ namespace ColorInverter
             // Get logical coordinates from Screen.AllScreens for matching
             var screens = WinForms.Screen.AllScreens;
             
+            // Debug: Show all discovered monitors and screens
+            var debugInfo = "Monitor Discovery Debug:\n\n";
+            debugInfo += $"Found {monitors.Count} monitors from EnumDisplayMonitors:\n";
+            foreach (var mon in monitors)
+            {
+                debugInfo += $"  Monitor: {mon.Name}, Bounds: {mon.PhysicalBounds}\n";
+            }
+            debugInfo += $"\nFound {screens.Length} screens from Screen.AllScreens:\n";
+            foreach (var screen in screens)
+            {
+                debugInfo += $"  Screen: {screen.DeviceName}, Bounds: {screen.Bounds}, Primary: {screen.Primary}\n";
+            }
+            
+            System.Windows.MessageBox.Show(debugInfo, "Monitor Discovery Debug", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            
             // Match monitors by device name and calculate logical coordinates
             foreach (var screen in screens)
             {
                 var matchingMonitor = monitors.FirstOrDefault(m => m.Name == screen.DeviceName);
+                
+                System.Windows.MessageBox.Show($"Matching screen {screen.DeviceName} with monitor: {matchingMonitor?.Name ?? "NOT FOUND"}", 
+                    "Monitor Matching", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 
                 if (matchingMonitor != null)
                 {
