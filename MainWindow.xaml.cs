@@ -331,16 +331,35 @@ namespace ColorInverter
                         }
                     }
                     
-                    // Convert to WPF BitmapSource
-                    var bitmapSource = ConvertToBitmapSource(bitmap);
+                    // Copy bitmap data on background thread, then create BitmapSource on UI thread
+                    var bitmapData = bitmap.LockBits(
+                        new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                        ImageLockMode.ReadOnly, bitmap.PixelFormat);
                     
-                    // Update UI on main thread
+                    var pixelData = new byte[bitmapData.Stride * bitmapData.Height];
+                    System.Runtime.InteropServices.Marshal.Copy(bitmapData.Scan0, pixelData, 0, pixelData.Length);
+                    var width = bitmapData.Width;
+                    var height = bitmapData.Height;
+                    var stride = bitmapData.Stride;
+                    
+                    bitmap.UnlockBits(bitmapData);
+                    
+                    // Update UI on main thread with copied data
                     System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                     {
                         try
                         {
                             if (overlayImage != null && simpleOverlay != null)
                             {
+                                // Create BitmapSource on UI thread using copied data
+                                var bitmapSource = BitmapSource.Create(
+                                    width, height,
+                                    96, 96,
+                                    System.Windows.Media.PixelFormats.Bgra32,
+                                    null,
+                                    pixelData,
+                                    stride);
+                                    
                                 overlayImage.Source = bitmapSource;
                                 // Only show success message once
                                 if (System.DateTime.Now.Millisecond < 50)
