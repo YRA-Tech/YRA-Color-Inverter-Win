@@ -516,7 +516,7 @@ namespace ColorInverter
             // Convert RECT to Rectangle and check if they intersect with capture area
             foreach (var videoWindow in detectedVideoWindows)
             {
-                var windowRect = new System.Drawing.Rectangle(
+                var windowRect = new System.Drawing.Rectangle( 
                     videoWindow.Left, 
                     videoWindow.Top, 
                     videoWindow.Right - videoWindow.Left, 
@@ -531,7 +531,6 @@ namespace ColorInverter
             
             return videoWindows;
         }
-
         private bool IsPixelInVideoWindow(int screenX, int screenY, List<System.Drawing.Rectangle> videoWindows)
         {
             foreach (var window in videoWindows)
