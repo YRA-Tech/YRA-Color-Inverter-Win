@@ -346,6 +346,9 @@ namespace ColorInverter
                         }
                     }
                     
+                    // Apply color inversion with video window masking
+                    ApplyColorInversion(bitmap, physicalX, physicalY);
+                    
                     // Copy bitmap data on background thread, then create BitmapSource on UI thread
                     var bitmapData = bitmap.LockBits(
                         new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height),
@@ -433,6 +436,113 @@ namespace ColorInverter
 
         [DllImport("gdi32.dll")]
         private static extern bool DeleteObject(IntPtr hObject);
+
+        private void ApplyColorInversion(Bitmap bitmap, int captureX, int captureY)
+        {
+            // Get video windows that might be in the captured area
+            var videoWindows = GetVideoWindowsInCaptureArea(captureX, captureY, bitmap.Width, bitmap.Height);
+            
+            // Debug: Show video window detection info (once per session)
+            if (!debugShownThisSession)
+            {
+                var debugInfo = $"Color Inversion Debug:\n" +
+                               $"Found {videoWindows.Count} video windows in capture area\n";
+                foreach (var window in videoWindows)
+                {
+                    debugInfo += $"  Video Window: {window}\n";
+                }
+                
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    System.Windows.MessageBox.Show(debugInfo, "Color Inversion Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+                });
+            }
+            
+            // Lock bitmap for direct pixel manipulation
+            var bitmapData = bitmap.LockBits(
+                new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                ImageLockMode.ReadWrite, bitmap.PixelFormat);
+
+            unsafe
+            {
+                byte* ptr = (byte*)bitmapData.Scan0;
+                int bytesPerPixel = 4; // BGRA32
+                int stride = bitmapData.Stride;
+
+                for (int y = 0; y < bitmap.Height; y++)
+                {
+                    for (int x = 0; x < bitmap.Width; x++)
+                    {
+                        // Calculate screen coordinates for this pixel
+                        int screenX = captureX + x;
+                        int screenY = captureY + y;
+                        
+                        // Check if this pixel is in a video window
+                        bool isInVideoWindow = IsPixelInVideoWindow(screenX, screenY, videoWindows);
+                        
+                        if (!isInVideoWindow)
+                        {
+                            // Get pixel offset
+                            int pixelOffset = y * stride + x * bytesPerPixel;
+                            
+                            // Get BGRA values
+                            byte blue = ptr[pixelOffset];
+                            byte green = ptr[pixelOffset + 1];
+                            byte red = ptr[pixelOffset + 2];
+                            byte alpha = ptr[pixelOffset + 3];
+                            
+                            // Invert colors (255 - value)
+                            ptr[pixelOffset] = (byte)(255 - blue);      // B
+                            ptr[pixelOffset + 1] = (byte)(255 - green); // G
+                            ptr[pixelOffset + 2] = (byte)(255 - red);   // R
+                            // Keep alpha unchanged
+                        }
+                    }
+                }
+            }
+
+            bitmap.UnlockBits(bitmapData);
+        }
+
+        private List<System.Drawing.Rectangle> GetVideoWindowsInCaptureArea(int captureX, int captureY, int captureWidth, int captureHeight)
+        {
+            var videoWindows = new List<System.Drawing.Rectangle>();
+            
+            // Get current video windows from VideoWindowDetector
+            var detectedVideoWindows = videoDetector.GetVideoWindows();
+            
+            var captureRect = new System.Drawing.Rectangle(captureX, captureY, captureWidth, captureHeight);
+            
+            // Convert RECT to Rectangle and check if they intersect with capture area
+            foreach (var videoWindow in detectedVideoWindows)
+            {
+                var windowRect = new System.Drawing.Rectangle(
+                    videoWindow.Left, 
+                    videoWindow.Top, 
+                    videoWindow.Right - videoWindow.Left, 
+                    videoWindow.Bottom - videoWindow.Top);
+                
+                // Check if video window intersects with capture area
+                if (captureRect.IntersectsWith(windowRect))
+                {
+                    videoWindows.Add(windowRect);
+                }
+            }
+            
+            return videoWindows;
+        }
+
+        private bool IsPixelInVideoWindow(int screenX, int screenY, List<System.Drawing.Rectangle> videoWindows)
+        {
+            foreach (var window in videoWindows)
+            {
+                if (window.Contains(screenX, screenY))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         private (double DpiScaleX, double DpiScaleY) GetDpiScale(Screen screen)
         {
