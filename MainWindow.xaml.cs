@@ -22,6 +22,8 @@ namespace ColorInverter
         private Window? simpleOverlay;
         private System.Windows.Controls.Image? overlayImage;
         private System.Threading.Timer? captureTimer;
+        private bool debugShownThisSession = false;
+        private bool imageSetDebugShown = false;
 
         public MainWindow()
         {
@@ -219,7 +221,7 @@ namespace ColorInverter
                 WindowStyle = WindowStyle.None,
                 ResizeMode = ResizeMode.NoResize,
                 AllowsTransparency = true,
-                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(128, 255, 0, 0)), // Semi-transparent red for debugging
+                Background = System.Windows.Media.Brushes.Transparent, // Transparent background
                 Topmost = true,
                 ShowInTaskbar = true, // Show in taskbar for debugging
                 WindowState = WindowState.Normal,
@@ -233,7 +235,7 @@ namespace ColorInverter
             System.Windows.MessageBox.Show($"Creating overlay at:\nLeft: {simpleOverlay.Left}\nTop: {simpleOverlay.Top}\nSize: {simpleOverlay.Width}x{simpleOverlay.Height}\nDPI Scale: {dpiScale}x{dpiScale}\nMonitor: {monitor.Name}", 
                 "Overlay Debug", MessageBoxButton.OK, MessageBoxImage.Information);
             
-            // Create image control for screen capture display
+            // Create image control for screen capture display with border
             overlayImage = new System.Windows.Controls.Image
             {
                 Stretch = System.Windows.Media.Stretch.Fill,
@@ -241,7 +243,15 @@ namespace ColorInverter
                 VerticalAlignment = System.Windows.VerticalAlignment.Center
             };
             
-            simpleOverlay.Content = overlayImage;
+            // Add border around image for debugging
+            var border = new System.Windows.Controls.Border
+            {
+                BorderBrush = System.Windows.Media.Brushes.Red,
+                BorderThickness = new System.Windows.Thickness(2),
+                Child = overlayImage
+            };
+            
+            simpleOverlay.Content = border;
             simpleOverlay.Show();
             simpleOverlay.Activate();
             simpleOverlay.Focus();
@@ -254,6 +264,10 @@ namespace ColorInverter
         {
             // Stop any existing timer
             StopScreenCapture();
+            
+            // Reset debug flags for new session
+            debugShownThisSession = false;
+            imageSetDebugShown = false;
             
             // Debug: Confirm screen capture is starting
             System.Windows.MessageBox.Show($"Starting screen capture for monitor: {monitor.Name}", 
@@ -285,9 +299,10 @@ namespace ColorInverter
                 var physicalWidth = (int)(400 * monitor.DpiScale);
                 var physicalHeight = (int)(400 * monitor.DpiScale);
                 
-                // Debug: Show capture info once at startup
-                if (captureTimer != null && System.DateTime.Now.Millisecond < 100) // Only show debug occasionally
+                // Debug: Show capture info once per session
+                if (!debugShownThisSession)
                 {
+                    debugShownThisSession = true;
                     var debugInfo = $"Screen Capture Debug:\n" +
                                    $"Monitor: {monitor.Name}\n" +
                                    $"Physical Bounds: {monitor.PhysicalBounds}\n" +
@@ -359,13 +374,18 @@ namespace ColorInverter
                                     null,
                                     pixelData,
                                     stride);
+                                
+                                // Freeze the bitmap to make it cross-thread safe
+                                bitmapSource.Freeze();
                                     
                                 overlayImage.Source = bitmapSource;
-                                // Only show success message once
-                                if (System.DateTime.Now.Millisecond < 50)
+                                
+                                // Debug: Verify image was set (only show once per session)
+                                if (!imageSetDebugShown)
                                 {
-                                    System.Windows.MessageBox.Show($"Updated overlay image: {bitmapSource.Width}x{bitmapSource.Height}", 
-                                        "Image Update Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                                    imageSetDebugShown = true;
+                                    System.Windows.MessageBox.Show($"Image source set successfully!\nBitmap size: {bitmapSource.PixelWidth}x{bitmapSource.PixelHeight}\nImage control size: {overlayImage.ActualWidth}x{overlayImage.ActualHeight}", 
+                                        "Image Set Debug", MessageBoxButton.OK, MessageBoxImage.Information);
                                 }
                             }
                             else
