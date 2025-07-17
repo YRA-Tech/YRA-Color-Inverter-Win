@@ -59,6 +59,13 @@ namespace ColorInverter
 
         private void ToggleInversion()
         {
+            // Ensure we're on the UI thread
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(ToggleInversion);
+                return;
+            }
+
             if (MonitorComboBox.SelectedIndex < 0)
             {
                 StatusLabel.Content = "❌ Please select a monitor first";
@@ -136,6 +143,7 @@ namespace ColorInverter
                 inverterCore.Start();
 
                 // Setup hotkey detection
+                hotkeyDetector.RemoveCallback(ToggleInversion); // Remove any existing callback
                 hotkeyDetector.AddCallback(ToggleInversion);
                 hotkeyDetector.Start();
 
@@ -153,11 +161,21 @@ namespace ColorInverter
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
             hotkeyDetector.Stop();
+            hotkeyDetector.RemoveCallback(ToggleInversion);
             
             if (inverterCore != null)
             {
                 inverterCore.Stop();
                 inverterCore = null;
+            }
+
+            // Close overlay if it exists
+            if (simpleOverlay != null)
+            {
+                StopScreenCapture();
+                simpleOverlay.Close();
+                simpleOverlay = null;
+                overlayImage = null;
             }
 
             inversionEnabled = false;
