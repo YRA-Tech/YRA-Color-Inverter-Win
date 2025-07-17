@@ -111,7 +111,14 @@ namespace ColorInverter
                     if (simpleOverlay != null)
                     {
                         StopScreenCapture();
-                        simpleOverlay.Close();
+                        try
+                        {
+                            simpleOverlay.Close();
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error closing overlay: {ex.Message}");
+                        }
                         simpleOverlay = null;
                         overlayImage = null;
                     }
@@ -191,26 +198,10 @@ namespace ColorInverter
             // Close existing overlay if any
             if (simpleOverlay != null)
             {
-                simpleOverlay.Close();
                 StopScreenCapture();
-            }
-            
-            // Get all screens and find the matching screen for DPI calculations
-            var screens = Screen.AllScreens;
-            var matchingScreen = screens.FirstOrDefault(s => 
-                s.Bounds.Left == monitor.PhysicalBounds.X && 
-                s.Bounds.Top == monitor.PhysicalBounds.Y);
-            
-            if (matchingScreen == null)
-            {
-                // Fallback to primary screen
-                matchingScreen = Screen.PrimaryScreen ?? Screen.AllScreens.FirstOrDefault();
-            }
-            
-            if (matchingScreen == null)
-            {
-                // No screens available - this shouldn't happen but handle gracefully
-                return;
+                simpleOverlay.Close();
+                simpleOverlay = null;
+                overlayImage = null;
             }
             
             // Use DPI scale factor from MonitorData (already calculated correctly)
@@ -218,8 +209,8 @@ namespace ColorInverter
             
             // Calculate position in WPF units (device-independent pixels)
             // Monitor bounds are in physical pixels, convert to logical pixels
-            var leftPosition = matchingScreen.Bounds.Left / dpiScale;
-            var topPosition = matchingScreen.Bounds.Top / dpiScale;
+            var leftPosition = monitor.PhysicalBounds.X / dpiScale;
+            var topPosition = monitor.PhysicalBounds.Y / dpiScale;
             
             // Create 400x400 overlay at upper-left corner of selected monitor
             simpleOverlay = new Window
@@ -312,14 +303,21 @@ namespace ColorInverter
                     // Update UI on main thread
                     System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                     {
-                        if (overlayImage != null)
+                        try
                         {
-                            overlayImage.Source = bitmapSource;
-                            System.Diagnostics.Debug.WriteLine($"Updated overlay image: {bitmapSource.Width}x{bitmapSource.Height}");
+                            if (overlayImage != null && simpleOverlay != null)
+                            {
+                                overlayImage.Source = bitmapSource;
+                                System.Diagnostics.Debug.WriteLine($"Updated overlay image: {bitmapSource.Width}x{bitmapSource.Height}");
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debug.WriteLine("overlayImage or simpleOverlay is null!");
+                            }
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine("overlayImage is null!");
+                            System.Diagnostics.Debug.WriteLine($"Error updating overlay image: {ex.Message}");
                         }
                     });
                 }

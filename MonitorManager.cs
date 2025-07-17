@@ -149,11 +149,16 @@ namespace ColorInverter
                 
                 GetDpiForMonitor(monitor, DpiType.Effective, out uint dpiX, out uint dpiY);
                 
+                // Debug: Show DPI detection info
+                System.Diagnostics.Debug.WriteLine($"DPI detection for {screen.DeviceName}: Point=({point.X},{point.Y}), DPI={dpiX}x{dpiY}, Scale={dpiX / 96.0:F2}");
+                
                 // Standard DPI is 96, return scale factor
                 return dpiX / 96.0;
             }
-            catch
+            catch (Exception ex)
             {
+                // Show what went wrong
+                System.Diagnostics.Debug.WriteLine($"DPI detection failed for {screen.DeviceName}: {ex.Message}");
                 // Fallback to 1.0 if DPI detection fails
                 return 1.0;
             }
