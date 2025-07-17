@@ -149,16 +149,41 @@ namespace ColorInverter
                 
                 GetDpiForMonitor(monitor, DpiType.Effective, out uint dpiX, out uint dpiY);
                 
-                // Debug: Show DPI detection info
-                System.Diagnostics.Debug.WriteLine($"DPI detection for {screen.DeviceName}: Point=({point.X},{point.Y}), DPI={dpiX}x{dpiY}, Scale={dpiX / 96.0:F2}");
+                // Debug: Show detailed DPI detection info
+                var debugInfo = $"DPI detection for {screen.DeviceName}:\n" +
+                               $"Screen Bounds: {screen.Bounds}\n" +
+                               $"Point used: ({point.X},{point.Y})\n" +
+                               $"Raw DPI: {dpiX}x{dpiY}\n" +
+                               $"Calculated Scale: {dpiX / 96.0:F2}\n" +
+                               $"Monitor Handle: {monitor}\n\n";
+                
+                // For debugging, let's also try different DPI types
+                GetDpiForMonitor(monitor, DpiType.Raw, out uint rawDpiX, out uint rawDpiY);
+                GetDpiForMonitor(monitor, DpiType.Angular, out uint angularDpiX, out uint angularDpiY);
+                debugInfo += $"Raw DPI: {rawDpiX}x{rawDpiY} (Scale: {rawDpiX / 96.0:F2})\n" +
+                           $"Angular DPI: {angularDpiX}x{angularDpiY} (Scale: {angularDpiX / 96.0:F2})";
+                
+                System.Windows.MessageBox.Show(debugInfo, "DPI Detection Debug", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 
                 // Standard DPI is 96, return scale factor
-                return dpiX / 96.0;
+                var calculatedScale = dpiX / 96.0;
+                
+                // TEMPORARY FIX: If the scale seems wrong, force it to 1.0
+                // This is a workaround for DPI detection issues
+                if (calculatedScale == 2.0 && screen.Bounds.Width <= 1920) // Likely 1920x1080 monitor shouldn't be 2.0 scale
+                {
+                    System.Windows.MessageBox.Show($"WARNING: Overriding DPI scale from {calculatedScale} to 1.0 for {screen.DeviceName}", 
+                        "DPI Override", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                    return 1.0;
+                }
+                
+                return calculatedScale;
             }
             catch (Exception ex)
             {
                 // Show what went wrong
-                System.Diagnostics.Debug.WriteLine($"DPI detection failed for {screen.DeviceName}: {ex.Message}");
+                System.Windows.MessageBox.Show($"DPI detection failed for {screen.DeviceName}: {ex.Message}", 
+                    "DPI Detection Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 // Fallback to 1.0 if DPI detection fails
                 return 1.0;
             }

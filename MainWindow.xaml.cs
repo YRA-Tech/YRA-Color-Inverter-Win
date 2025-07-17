@@ -256,7 +256,8 @@ namespace ColorInverter
             StopScreenCapture();
             
             // Debug: Confirm screen capture is starting
-            System.Diagnostics.Debug.WriteLine($"Starting screen capture for monitor: {monitor.Name}");
+            System.Windows.MessageBox.Show($"Starting screen capture for monitor: {monitor.Name}", 
+                "Screen Capture Start", MessageBoxButton.OK, MessageBoxImage.Information);
             
             // Start timer to capture screen at 30 FPS
             captureTimer = new System.Threading.Timer(
@@ -284,17 +285,43 @@ namespace ColorInverter
                 var physicalWidth = (int)(400 * monitor.DpiScale);
                 var physicalHeight = (int)(400 * monitor.DpiScale);
                 
-                // Debug: Show capture info once
-                System.Diagnostics.Debug.WriteLine($"Capturing: X={physicalX}, Y={physicalY}, W={physicalWidth}, H={physicalHeight}, DPI={monitor.DpiScale}");
+                // Debug: Show capture info once at startup
+                if (captureTimer != null && System.DateTime.Now.Millisecond < 100) // Only show debug occasionally
+                {
+                    var debugInfo = $"Screen Capture Debug:\n" +
+                                   $"Monitor: {monitor.Name}\n" +
+                                   $"Physical Bounds: {monitor.PhysicalBounds}\n" +
+                                   $"Logical Bounds: {monitor.LogicalBounds}\n" +
+                                   $"DPI Scale: {monitor.DpiScale}\n" +
+                                   $"Capture coords: X={physicalX}, Y={physicalY}\n" +
+                                   $"Capture size: W={physicalWidth}, H={physicalHeight}";
+                    
+                    System.Windows.MessageBox.Show(debugInfo, "Screen Capture Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
                 
                 // Capture screen
                 using (var bitmap = new Bitmap(physicalWidth, physicalHeight, PixelFormat.Format32bppArgb))
                 {
                     using (var graphics = Graphics.FromImage(bitmap))
                     {
-                        graphics.CopyFromScreen(physicalX, physicalY, 0, 0, 
-                            new System.Drawing.Size(physicalWidth, physicalHeight), 
-                            CopyPixelOperation.SourceCopy);
+                        try
+                        {
+                            graphics.CopyFromScreen(physicalX, physicalY, 0, 0, 
+                                new System.Drawing.Size(physicalWidth, physicalHeight), 
+                                CopyPixelOperation.SourceCopy);
+                        }
+                        catch (Exception screenCaptureEx)
+                        {
+                            // If screen capture fails, fill with red for debugging
+                            System.Windows.MessageBox.Show($"Screen capture failed: {screenCaptureEx.Message}", 
+                                "Screen Capture Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            graphics.Clear(Color.Red);
+                            using (var brush = new SolidBrush(Color.White))
+                            using (var font = new Font("Arial", 16))
+                            {
+                                graphics.DrawString("CAPTURE FAILED", font, brush, 10, 10);
+                            }
+                        }
                     }
                     
                     // Convert to WPF BitmapSource
@@ -308,16 +335,23 @@ namespace ColorInverter
                             if (overlayImage != null && simpleOverlay != null)
                             {
                                 overlayImage.Source = bitmapSource;
-                                System.Diagnostics.Debug.WriteLine($"Updated overlay image: {bitmapSource.Width}x{bitmapSource.Height}");
+                                // Only show success message once
+                                if (System.DateTime.Now.Millisecond < 50)
+                                {
+                                    System.Windows.MessageBox.Show($"Updated overlay image: {bitmapSource.Width}x{bitmapSource.Height}", 
+                                        "Image Update Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                                }
                             }
                             else
                             {
-                                System.Diagnostics.Debug.WriteLine("overlayImage or simpleOverlay is null!");
+                                System.Windows.MessageBox.Show("overlayImage or simpleOverlay is null!", 
+                                    "Update Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                             }
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine($"Error updating overlay image: {ex.Message}");
+                            System.Windows.MessageBox.Show($"Error updating overlay image: {ex.Message}", 
+                                "UI Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     });
                 }
@@ -325,8 +359,8 @@ namespace ColorInverter
             catch (Exception ex)
             {
                 // Show actual error details
-                System.Diagnostics.Debug.WriteLine($"Screen capture error: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                System.Windows.MessageBox.Show($"Screen capture error: {ex.Message}\n\nStack trace: {ex.StackTrace}", 
+                    "Screen Capture Exception", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         
