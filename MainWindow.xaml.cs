@@ -9,7 +9,7 @@ using System.Windows.Forms;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using System.Threading;
-
+ 
 namespace ColorInverter
 {
     public partial class MainWindow : Window
