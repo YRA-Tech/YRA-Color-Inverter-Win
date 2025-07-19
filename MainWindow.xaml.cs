@@ -213,16 +213,20 @@ namespace ColorInverter
             var leftPosition = monitor.PhysicalBounds.X / dpiScale;
             var topPosition = monitor.PhysicalBounds.Y / dpiScale;
             
+            // Debug: Show window positioning info
+            System.Windows.MessageBox.Show($"Creating overlay:\nMonitor: {monitor.Name}\nDPI Scale: {dpiScale}\nPhysical Bounds: {monitor.PhysicalBounds}\nPosition: ({leftPosition},{topPosition})\nSize: 400x400", 
+                "Overlay Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+            
             // Create 400x400 overlay at upper-left corner of selected monitor
             simpleOverlay = new Window
             {
                 Title = "Screen Capture Overlay",
                 WindowStyle = WindowStyle.None,
                 ResizeMode = ResizeMode.NoResize,
-                AllowsTransparency = false,
-                Background = System.Windows.Media.Brushes.Black, // Opaque background
+                AllowsTransparency = true,
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 0, 0, 0)), // Solid black background
                 Topmost = true,
-                ShowInTaskbar = false, // Hide from taskbar
+                ShowInTaskbar = true, // Show in taskbar for debugging
                 WindowState = WindowState.Normal,
                 Width = 400,  // Fixed 400 logical pixels
                 Height = 400, // Fixed 400 logical pixels
