@@ -323,7 +323,7 @@ namespace ColorInverter
                                 new System.Drawing.Size(physicalWidth, physicalHeight), 
                                 CopyPixelOperation.SourceCopy);
                         }
-                        catch (Exception screenCaptureEx)
+                        catch (Exception)
                         {
                             graphics.Clear(Color.Red);
                             using (var brush = new SolidBrush(Color.White))
@@ -417,6 +417,10 @@ namespace ColorInverter
 
         private void ApplyColorInversion(Bitmap bitmap, int captureX, int captureY)
         {
+            // Debug: Show that color inversion is being called
+            System.Windows.MessageBox.Show($"ApplyColorInversion called!\nBitmap size: {bitmap.Width}x{bitmap.Height}\nCapture pos: ({captureX},{captureY})", 
+                "Color Inversion Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+            
             // Get video windows that might be in the captured area
             var videoWindows = GetVideoWindowsInCaptureArea(captureX, captureY, bitmap.Width, bitmap.Height);
             
