@@ -212,21 +212,24 @@ namespace ColorInverter
             var topPosition = monitor.PhysicalBounds.Y / dpiScale;
             
             
-            // Create 400x400 overlay at upper-left corner of selected monitor
+            // Create full-screen overlay for selected monitor
+            var overlayWidth = monitor.PhysicalBounds.Width / dpiScale;
+            var overlayHeight = monitor.PhysicalBounds.Height / dpiScale;
+            
             simpleOverlay = new Window
             {
                 Title = "Screen Capture Overlay",
                 WindowStyle = WindowStyle.None,
                 ResizeMode = ResizeMode.NoResize,
                 AllowsTransparency = true,
-                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 0, 255)), // Bright magenta background for testing
+                Background = System.Windows.Media.Brushes.Transparent, // Transparent background
                 Topmost = true,
-                ShowInTaskbar = true, // Show in taskbar for debugging
+                ShowInTaskbar = false, // Hide from taskbar
                 WindowState = WindowState.Normal,
-                Width = 400,  // Fixed 400 logical pixels
-                Height = 400, // Fixed 400 logical pixels
-                Left = leftPosition,   // Upper-left X of monitor (logical coordinates)
-                Top = topPosition      // Upper-left Y of monitor (logical coordinates)
+                Width = overlayWidth,   // Full monitor width
+                Height = overlayHeight, // Full monitor height
+                Left = leftPosition,    // Monitor X position
+                Top = topPosition       // Monitor Y position
             };
             
             
@@ -297,12 +300,11 @@ namespace ColorInverter
                     }
                 });
 
-                // Calculate physical coordinates for screen capture
-                // Capture 400x400 logical pixels from upper-left corner of monitor
-                var physicalX = monitor.PhysicalBounds.X;  // Upper-left X of monitor
-                var physicalY = monitor.PhysicalBounds.Y;  // Upper-left Y of monitor
-                var physicalWidth = (int)(400 * monitor.DpiScale);
-                var physicalHeight = (int)(400 * monitor.DpiScale);
+                // Calculate physical coordinates for full screen capture
+                var physicalX = monitor.PhysicalBounds.X;      // Monitor X position
+                var physicalY = monitor.PhysicalBounds.Y;      // Monitor Y position
+                var physicalWidth = monitor.PhysicalBounds.Width;   // Full monitor width
+                var physicalHeight = monitor.PhysicalBounds.Height; // Full monitor height
                 
                 
                 // Capture screen
