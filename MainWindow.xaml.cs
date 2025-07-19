@@ -248,6 +248,11 @@ namespace ColorInverter
             simpleOverlay.Content = overlayImage;
             simpleOverlay.Show();
             
+            // Use Windows API to make window truly transparent to input
+            var hwnd = new WindowInteropHelper(simpleOverlay).Handle;
+            var extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT);
+            
             // Don't activate or bring into view to avoid system notifications
             
             // Capture screen immediately when overlay is created
@@ -409,6 +414,16 @@ namespace ColorInverter
 
         [DllImport("gdi32.dll")]
         private static extern bool DeleteObject(IntPtr hObject);
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_LAYERED = 0x80000;
+        private const int WS_EX_TRANSPARENT = 0x20;
 
         private void ApplyColorInversion(Bitmap bitmap, int captureX, int captureY)
         {
