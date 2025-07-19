@@ -226,6 +226,7 @@ namespace ColorInverter
                 Topmost = true,
                 ShowInTaskbar = false, // Hide from taskbar
                 WindowState = WindowState.Normal,
+                IsHitTestVisible = false, // Pass through all mouse and keyboard events
                 Width = overlayWidth,   // Full monitor width
                 Height = overlayHeight, // Full monitor height
                 Left = leftPosition,    // Monitor X position
@@ -258,12 +259,12 @@ namespace ColorInverter
             
             
             
-            // Start timer to capture screen once per second
+            // Start timer to capture screen at 30 FPS (1/30 second)
             captureTimer = new System.Threading.Timer(
                 callback: _ => CaptureScreen(monitor),
                 state: null,
                 dueTime: 0,
-                period: 1000 // 1 second
+                period: 33 // 33ms ≈ 30 FPS
             );
         }
         
