@@ -327,8 +327,11 @@ namespace ColorInverter
                         }
                     }
                     
-                    // Apply color inversion with video window masking
-                    ApplyColorInversion(bitmap, physicalX, physicalY);
+                    // Test: Fill entire bitmap with solid red
+                    using (var g = Graphics.FromImage(bitmap))
+                    {
+                        g.Clear(Color.Red);
+                    }
                     
                     // Copy bitmap data on background thread, then create BitmapSource on UI thread
                     var bitmapData = bitmap.LockBits(
