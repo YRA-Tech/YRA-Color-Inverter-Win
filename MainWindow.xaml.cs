@@ -317,27 +317,14 @@ namespace ColorInverter
                         }
                     }
                     
-                    // Get video windows that might be in the captured area
-                    var videoWindows = GetVideoWindowsInCaptureArea(physicalX, physicalY, physicalWidth, physicalHeight);
-                    
-                    // Apply color inversion: invert all RGB values except in video windows
+                    // Apply color inversion: invert all RGB values
                     for (int y = 0; y < bitmap.Height; y++)
                     {
                         for (int x = 0; x < bitmap.Width; x++)
                         {
-                            // Calculate screen coordinates for this pixel
-                            int screenX = physicalX + x;
-                            int screenY = physicalY + y;
-                            
-                            // Check if this pixel is in a video window
-                            bool isInVideoWindow = IsPixelInVideoWindow(screenX, screenY, videoWindows);
-                            
-                            if (!isInVideoWindow)
-                            {
-                                Color pixel = bitmap.GetPixel(x, y);
-                                Color newPixel = Color.FromArgb(pixel.A, 255 - pixel.R, 255 - pixel.G, 255 - pixel.B);
-                                bitmap.SetPixel(x, y, newPixel);
-                            }
+                            Color pixel = bitmap.GetPixel(x, y);
+                            Color newPixel = Color.FromArgb(pixel.A, 255 - pixel.R, 255 - pixel.G, 255 - pixel.B);
+                            bitmap.SetPixel(x, y, newPixel);
                         }
                     }
                     
