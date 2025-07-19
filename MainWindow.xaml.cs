@@ -327,10 +327,15 @@ namespace ColorInverter
                         }
                     }
                     
-                    // Test: Fill entire bitmap with solid red
-                    using (var g = Graphics.FromImage(bitmap))
+                    // Apply color modification: set all red values to 255
+                    for (int y = 0; y < bitmap.Height; y++)
                     {
-                        g.Clear(Color.Red);
+                        for (int x = 0; x < bitmap.Width; x++)
+                        {
+                            Color pixel = bitmap.GetPixel(x, y);
+                            Color newPixel = Color.FromArgb(pixel.A, 255, pixel.G, pixel.B);
+                            bitmap.SetPixel(x, y, newPixel);
+                        }
                     }
                     
                     // Copy bitmap data on background thread, then create BitmapSource on UI thread
