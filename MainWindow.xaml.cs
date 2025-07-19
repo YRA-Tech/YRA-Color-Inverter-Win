@@ -23,7 +23,6 @@ namespace ColorInverter
         private Window? simpleOverlay;
         private System.Windows.Controls.Image? overlayImage;
         private System.Threading.Timer? captureTimer;
-        private System.Threading.Timer? activityTimer;
 
         public MainWindow()
         {
@@ -99,15 +98,7 @@ namespace ColorInverter
                     // Create simple overlay window
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
-                        try
-                        {
-                            CreateSimpleOverlay(selectedMonitor);
-                            System.Windows.MessageBox.Show("Overlay created successfully");
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Windows.MessageBox.Show($"Error creating overlay: {ex.Message}");
-                        }
+                        CreateSimpleOverlay(selectedMonitor);
                     });
                     
                     StatusLabel.Content = $"🟢 INVERTING {selectedMonitor.Name} - Press Ctrl+Shift+I to toggle";
@@ -119,7 +110,6 @@ namespace ColorInverter
                     if (simpleOverlay != null)
                     {
                         StopScreenCapture();
-                        StopActivityMonitoring();
                         try
                         {
                             simpleOverlay.Close();
@@ -190,7 +180,6 @@ namespace ColorInverter
             if (simpleOverlay != null)
             {
                 StopScreenCapture();
-                StopActivityMonitoring();
                 simpleOverlay.Close();
                 simpleOverlay = null;
                 overlayImage = null;
@@ -268,9 +257,6 @@ namespace ColorInverter
             
             // Capture screen immediately when overlay is created
             CaptureScreen(monitor);
-            
-            // Start timer to refresh overlay periodically for user activity
-            StartActivityMonitoring(monitor);
         }
 
         private void StartScreenCapture(MonitorManager.MonitorData monitor)
@@ -295,25 +281,6 @@ namespace ColorInverter
             captureTimer = null;
         }
         
-        private void StartActivityMonitoring(MonitorManager.MonitorData monitor)
-        {
-            // Stop any existing timer
-            StopActivityMonitoring();
-            
-            // Start timer to refresh overlay every 100ms to capture user activity
-            activityTimer = new System.Threading.Timer(
-                callback: _ => CaptureScreen(monitor),
-                state: null,
-                dueTime: 100,
-                period: 100 // Refresh every 100ms
-            );
-        }
-        
-        private void StopActivityMonitoring()
-        {
-            activityTimer?.Dispose();
-            activityTimer = null;
-        }
         
         private void CaptureScreen(MonitorManager.MonitorData monitor)
         {
@@ -604,7 +571,6 @@ namespace ColorInverter
             hotkeyDetector?.Stop();
             inverterCore?.Stop();
             StopScreenCapture();
-            StopActivityMonitoring();
             simpleOverlay?.Close();
             base.OnClosed(e);
         }
