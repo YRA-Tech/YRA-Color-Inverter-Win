@@ -259,12 +259,12 @@ namespace ColorInverter
             
             
             
-            // Start timer to capture screen at 30 FPS (1/30 second)
+            // Start timer to capture screen once per second
             captureTimer = new System.Threading.Timer(
                 callback: _ => CaptureScreen(monitor),
                 state: null,
                 dueTime: 0,
-                period: 33 // 33ms ≈ 30 FPS
+                period: 1000 // 1 second
             );
         }
         
