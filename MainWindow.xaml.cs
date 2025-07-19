@@ -383,6 +383,8 @@ namespace ColorInverter
                                 {
                                     simpleOverlay.Show();
                                 }
+                                
+                                System.Windows.MessageBox.Show("Screen capture completed and overlay updated");
                             }
                         }
                         catch (Exception ex)
