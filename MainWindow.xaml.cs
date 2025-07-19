@@ -219,10 +219,10 @@ namespace ColorInverter
                 Title = "Screen Capture Overlay",
                 WindowStyle = WindowStyle.None,
                 ResizeMode = ResizeMode.NoResize,
-                AllowsTransparency = true,
-                Background = System.Windows.Media.Brushes.Transparent, // Transparent background
+                AllowsTransparency = false,
+                Background = System.Windows.Media.Brushes.Black, // Opaque background
                 Topmost = true,
-                ShowInTaskbar = true, // Show in taskbar for debugging
+                ShowInTaskbar = false, // Hide from taskbar
                 WindowState = WindowState.Normal,
                 Width = 400,  // Fixed 400 logical pixels
                 Height = 400, // Fixed 400 logical pixels
