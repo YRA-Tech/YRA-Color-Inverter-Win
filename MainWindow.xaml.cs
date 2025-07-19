@@ -242,7 +242,19 @@ namespace ColorInverter
             simpleOverlay.Content = overlayImage;
             simpleOverlay.Show();
             simpleOverlay.Activate();
-            simpleOverlay.Focus();
+            
+            // Ensure always on top by bringing to front
+            simpleOverlay.BringIntoView();
+            
+            // Set up event handler to maintain topmost status
+            simpleOverlay.Deactivated += (s, e) => 
+            {
+                if (simpleOverlay != null && simpleOverlay.IsVisible)
+                {
+                    simpleOverlay.Topmost = false;
+                    simpleOverlay.Topmost = true;
+                }
+            };
             
             // Start screen capture for the overlay
             StartScreenCapture(monitor);
