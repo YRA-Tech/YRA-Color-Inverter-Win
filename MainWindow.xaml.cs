@@ -99,7 +99,15 @@ namespace ColorInverter
                     // Create simple overlay window
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
-                        CreateSimpleOverlay(selectedMonitor);
+                        try
+                        {
+                            CreateSimpleOverlay(selectedMonitor);
+                            System.Windows.MessageBox.Show("Overlay created successfully");
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Windows.MessageBox.Show($"Error creating overlay: {ex.Message}");
+                        }
                     });
                     
                     StatusLabel.Content = $"🟢 INVERTING {selectedMonitor.Name} - Press Ctrl+Shift+I to toggle";
