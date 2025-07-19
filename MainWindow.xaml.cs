@@ -222,7 +222,7 @@ namespace ColorInverter
                 WindowStyle = WindowStyle.None,
                 ResizeMode = ResizeMode.NoResize,
                 AllowsTransparency = true,
-                Background = System.Windows.Media.Brushes.Transparent, // Transparent background
+                Background = System.Windows.Media.Brushes.Red, // Temporary red background to see overlay
                 Topmost = true,
                 ShowInTaskbar = false, // Hide from taskbar
                 WindowState = WindowState.Normal,
@@ -384,7 +384,7 @@ namespace ColorInverter
                                     simpleOverlay.Show();
                                 }
                                 
-                                System.Windows.MessageBox.Show("Screen capture completed and overlay updated");
+                                System.Windows.MessageBox.Show($"Screen capture completed. Overlay visible: {simpleOverlay.IsVisible}, HitTest: {simpleOverlay.IsHitTestVisible}");
                             }
                         }
                         catch (Exception ex)
