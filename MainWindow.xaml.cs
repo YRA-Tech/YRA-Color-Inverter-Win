@@ -19,7 +19,9 @@ namespace ColorInverter
         private VideoWindowDetector videoDetector;
         private HotkeyDetector hotkeyDetector;
         private ColorInverterCore? inverterCore;
+        private DirectXColorInverterCore? directXInverterCore;
         private bool inversionEnabled = false;
+        private bool useDirectXPipeline = true; // Switch to enable/disable DirectX pipeline
         private Window? simpleOverlay;
         private System.Windows.Controls.Image? overlayImage;
         private System.Threading.Timer? captureTimer;
@@ -33,6 +35,30 @@ namespace ColorInverter
             hotkeyDetector = new HotkeyDetector();
             
             RefreshMonitors();
+            
+            // Run DirectX diagnostics on startup (in debug mode)
+#if DEBUG
+            RunStartupDiagnostics();
+#endif
+        }
+
+        private void RunStartupDiagnostics()
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    var monitors = monitorManager.GetMonitors();
+                    if (monitors.Count > 0)
+                    {
+                        DirectXTestMode.RunDiagnostics(monitors[0].PhysicalBounds);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Startup diagnostics failed: {ex.Message}");
+                }
+            });
         }
 
         private void RefreshMonitors()
@@ -84,7 +110,37 @@ namespace ColorInverter
             var selectedMonitor = monitors[MonitorComboBox.SelectedIndex];
             
 
-            if (inverterCore != null)
+            if (useDirectXPipeline && directXInverterCore != null)
+            {
+                inversionEnabled = !inversionEnabled;
+                
+                if (inversionEnabled)
+                {
+                    // Stop current core and create new one with updated monitor bounds
+                    directXInverterCore.Stop();
+                    directXInverterCore.Dispose();
+                    
+                    directXInverterCore = new DirectXColorInverterCore(selectedMonitor.PhysicalBounds, videoDetector);
+                    directXInverterCore.FrameProcessed += OnDirectXFrameProcessed;
+                    directXInverterCore.Start();
+                    directXInverterCore.SetInversionActive(true);
+                    
+                    // Create DirectX overlay window
+                    CreateDirectXOverlay(selectedMonitor);
+                    
+                    StatusLabel.Content = $"🟢 DirectX INVERTING {selectedMonitor.Name} - Press Ctrl+Shift+I to toggle";
+                    StatusLabel.Foreground = System.Windows.Media.Brushes.Green;
+                }
+                else
+                {
+                    directXInverterCore.SetInversionActive(false);
+                    CloseOverlay();
+                    
+                    StatusLabel.Content = "🟡 DirectX pipeline ready - Press Ctrl+Shift+I to toggle";
+                    StatusLabel.Foreground = System.Windows.Media.Brushes.Orange;
+                }
+            }
+            else if (inverterCore != null)
             {
                 inversionEnabled = !inversionEnabled;
                 
@@ -96,39 +152,22 @@ namespace ColorInverter
                     inverterCore.Start();
                     
                     // Create simple overlay window
-                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        CreateSimpleOverlay(selectedMonitor);
-                    });
+                    CreateSimpleOverlay(selectedMonitor);
                     
-                    StatusLabel.Content = $"🟢 INVERTING {selectedMonitor.Name} - Press Ctrl+Shift+I to toggle";
+                    StatusLabel.Content = $"🟢 GDI INVERTING {selectedMonitor.Name} - Press Ctrl+Shift+I to toggle";
                     StatusLabel.Foreground = System.Windows.Media.Brushes.Green;
                 }
                 else
                 {
-                    // Hide simple overlay
-                    if (simpleOverlay != null)
-                    {
-                        StopScreenCapture();
-                        try
-                        {
-                            simpleOverlay.Close();
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Error closing overlay: {ex.Message}");
-                        }
-                        simpleOverlay = null;
-                        overlayImage = null;
-                    }
+                    CloseOverlay();
                     
-                    StatusLabel.Content = "🔴 Detection active - Press Ctrl+Shift+I to toggle";
-                    StatusLabel.Foreground = System.Windows.Media.Brushes.Red;
+                    StatusLabel.Content = "🟡 GDI pipeline ready - Press Ctrl+Shift+I to toggle";
+                    StatusLabel.Foreground = System.Windows.Media.Brushes.Orange;
                 }
             }
             else
             {
-                StatusLabel.Content = "❌ Error: inverterCore is null";
+                StatusLabel.Content = "❌ Error: No inverter core initialized";
                 StatusLabel.Foreground = System.Windows.Media.Brushes.Red;
             }
         }
@@ -145,9 +184,37 @@ namespace ColorInverter
                     return;
                 }
 
-                // Use first monitor as placeholder - will be updated when hotkey is pressed
-                inverterCore = new ColorInverterCore(monitors[0].PhysicalBounds, videoDetector);
-                inverterCore.Start();
+                if (useDirectXPipeline)
+                {
+                    try
+                    {
+                        // Try DirectX pipeline first
+                        directXInverterCore = new DirectXColorInverterCore(monitors[0].PhysicalBounds, videoDetector);
+                        directXInverterCore.FrameProcessed += OnDirectXFrameProcessed;
+                        directXInverterCore.Start();
+                        
+                        StatusLabel.Content = "🟡 DirectX pipeline initialized - Press Ctrl+Shift+I to toggle";
+                    }
+                    catch (Exception directXEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"DirectX initialization failed: {directXEx.Message}");
+                        
+                        // Fallback to GDI pipeline
+                        useDirectXPipeline = false;
+                        inverterCore = new ColorInverterCore(monitors[0].PhysicalBounds, videoDetector);
+                        inverterCore.Start();
+                        
+                        StatusLabel.Content = "🟡 Fallback to GDI pipeline - Press Ctrl+Shift+I to toggle";
+                    }
+                }
+                else
+                {
+                    // Use original GDI pipeline
+                    inverterCore = new ColorInverterCore(monitors[0].PhysicalBounds, videoDetector);
+                    inverterCore.Start();
+                    
+                    StatusLabel.Content = "🟡 GDI pipeline - Press Ctrl+Shift+I to toggle";
+                }
 
                 // Setup hotkey detection
                 hotkeyDetector.RemoveCallback(ToggleInversion); // Remove any existing callback
@@ -156,12 +223,13 @@ namespace ColorInverter
 
                 StartButton.IsEnabled = false;
                 StopButton.IsEnabled = true;
-                StatusLabel.Content = "🔴 Detection active - Press Ctrl+Shift+I to toggle";
-                StatusLabel.Foreground = System.Windows.Media.Brushes.Red;
+                StatusLabel.Foreground = System.Windows.Media.Brushes.Orange;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Failed to start detection: {ex.Message}");
+                StatusLabel.Content = $"❌ Failed to start: {ex.Message}";
+                StatusLabel.Foreground = System.Windows.Media.Brushes.Red;
             }
         }
 
@@ -169,6 +237,14 @@ namespace ColorInverter
         {
             hotkeyDetector.Stop();
             hotkeyDetector.RemoveCallback(ToggleInversion);
+            
+            if (directXInverterCore != null)
+            {
+                directXInverterCore.FrameProcessed -= OnDirectXFrameProcessed;
+                directXInverterCore.Stop();
+                directXInverterCore.Dispose();
+                directXInverterCore = null;
+            }
             
             if (inverterCore != null)
             {
@@ -566,9 +642,88 @@ namespace ColorInverter
             Raw = 2,
         }
 
+        private void OnDirectXFrameProcessed(System.Windows.Media.ImageSource imageSource)
+        {
+            // Update the overlay with processed frame from DirectX pipeline
+            if (overlayImage != null && simpleOverlay != null)
+            {
+                overlayImage.Source = imageSource;
+            }
+        }
+
+        private void CreateDirectXOverlay(MonitorManager.MonitorData monitor)
+        {
+            // Close existing overlay
+            CloseOverlay();
+            
+            // Use DPI scale factor from MonitorData
+            var dpiScale = monitor.DpiScale;
+            
+            // Calculate position in WPF units
+            var leftPosition = monitor.PhysicalBounds.X / dpiScale;
+            var topPosition = monitor.PhysicalBounds.Y / dpiScale;
+            var overlayWidth = monitor.PhysicalBounds.Width / dpiScale;
+            var overlayHeight = monitor.PhysicalBounds.Height / dpiScale;
+            
+            simpleOverlay = new Window
+            {
+                Title = "DirectX Color Inverter Overlay",
+                WindowStyle = WindowStyle.None,
+                ResizeMode = ResizeMode.NoResize,
+                AllowsTransparency = true,
+                Background = System.Windows.Media.Brushes.Transparent,
+                Topmost = true,
+                ShowInTaskbar = false,
+                WindowState = WindowState.Normal,
+                IsHitTestVisible = false,
+                Focusable = false,
+                ShowActivated = false,
+                Width = overlayWidth,
+                Height = overlayHeight,
+                Left = leftPosition,
+                Top = topPosition
+            };
+            
+            // Create image control for DirectX output
+            overlayImage = new System.Windows.Controls.Image
+            {
+                Stretch = System.Windows.Media.Stretch.Fill,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch,
+                VerticalAlignment = System.Windows.VerticalAlignment.Stretch,
+                IsHitTestVisible = false
+            };
+            
+            simpleOverlay.Content = overlayImage;
+            simpleOverlay.Show();
+            
+            // Make window transparent to input
+            var hwnd = new WindowInteropHelper(simpleOverlay).Handle;
+            var extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT);
+        }
+
+        private void CloseOverlay()
+        {
+            if (simpleOverlay != null)
+            {
+                StopScreenCapture();
+                try
+                {
+                    simpleOverlay.Close();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error closing overlay: {ex.Message}");
+                }
+                simpleOverlay = null;
+                overlayImage = null;
+            }
+        }
+
         protected override void OnClosed(EventArgs e)
         {
             hotkeyDetector?.Stop();
+            directXInverterCore?.Dispose();
             inverterCore?.Stop();
             StopScreenCapture();
             simpleOverlay?.Close();
