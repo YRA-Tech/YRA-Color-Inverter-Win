@@ -222,11 +222,13 @@ namespace ColorInverter
                 WindowStyle = WindowStyle.None,
                 ResizeMode = ResizeMode.NoResize,
                 AllowsTransparency = true,
-                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(128, 0, 255, 0)), // Semi-transparent green to see if image loads
+                Background = System.Windows.Media.Brushes.Transparent, // Transparent background
                 Topmost = true,
                 ShowInTaskbar = false, // Hide from taskbar
                 WindowState = WindowState.Normal,
                 IsHitTestVisible = false, // Pass through all mouse and keyboard events
+                Focusable = false, // Prevent window from receiving focus
+                ShowActivated = false, // Don't activate when shown
                 Width = overlayWidth,   // Full monitor width
                 Height = overlayHeight, // Full monitor height
                 Left = leftPosition,    // Monitor X position
@@ -239,7 +241,8 @@ namespace ColorInverter
             {
                 Stretch = System.Windows.Media.Stretch.Fill,
                 HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch,
-                VerticalAlignment = System.Windows.VerticalAlignment.Stretch
+                VerticalAlignment = System.Windows.VerticalAlignment.Stretch,
+                IsHitTestVisible = false // Make image also non-interactive
             };
             
             simpleOverlay.Content = overlayImage;
