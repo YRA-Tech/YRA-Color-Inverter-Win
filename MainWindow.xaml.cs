@@ -277,7 +277,6 @@ namespace ColorInverter
         {
             try
             {
-                System.Windows.MessageBox.Show("CaptureScreen started");
                 // Hide overlay window before capture to prevent feedback loop
                 bool overlayWasVisible = false;
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -395,7 +394,7 @@ namespace ColorInverter
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Screen capture error: {ex.Message}");
+                System.Windows.MessageBox.Show($"Screen capture error: {ex.Message}");
             }
         }
         
