@@ -243,20 +243,8 @@ namespace ColorInverter
             
             simpleOverlay.Content = overlayImage;
             simpleOverlay.Show();
-            simpleOverlay.Activate();
             
-            // Ensure always on top by bringing to front
-            simpleOverlay.BringIntoView();
-            
-            // Set up event handler to maintain topmost status
-            simpleOverlay.Deactivated += (s, e) => 
-            {
-                if (simpleOverlay != null && simpleOverlay.IsVisible)
-                {
-                    simpleOverlay.Topmost = false;
-                    simpleOverlay.Topmost = true;
-                }
-            };
+            // Don't activate or bring into view to avoid system notifications
             
             
             // Start screen capture for the overlay
