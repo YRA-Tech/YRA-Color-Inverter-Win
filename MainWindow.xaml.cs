@@ -47,8 +47,6 @@ namespace ColorInverter
                 MonitorComboBox.SelectedIndex = 0;
             }
             
-            // Show debug info popup on startup
-            System.Windows.MessageBox.Show(monitorManager.GetDebugInfo(), "Monitor Detection Debug", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
@@ -232,9 +230,6 @@ namespace ColorInverter
                 Top = topPosition      // Upper-left Y of monitor (logical coordinates)
             };
             
-            // Debug: Show window creation info
-            System.Windows.MessageBox.Show($"Creating overlay at:\nLeft: {simpleOverlay.Left}\nTop: {simpleOverlay.Top}\nSize: {simpleOverlay.Width}x{simpleOverlay.Height}\nDPI Scale: {dpiScale}x{dpiScale}\nMonitor: {monitor.Name}", 
-                "Overlay Debug", MessageBoxButton.OK, MessageBoxImage.Information);
             
             // Create image control for screen capture display
             overlayImage = new System.Windows.Controls.Image
@@ -262,9 +257,6 @@ namespace ColorInverter
             debugShownThisSession = false;
             imageSetDebugShown = false;
             
-            // Debug: Confirm screen capture is starting
-            System.Windows.MessageBox.Show($"Starting screen capture for monitor: {monitor.Name}", 
-                "Screen Capture Start", MessageBoxButton.OK, MessageBoxImage.Information);
             
             // Start timer to capture screen at 30 FPS
             captureTimer = new System.Threading.Timer(
@@ -285,6 +277,17 @@ namespace ColorInverter
         {
             try
             {
+                // Hide overlay window before capture to prevent feedback loop
+                bool overlayWasVisible = false;
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (simpleOverlay != null && simpleOverlay.IsVisible)
+                    {
+                        overlayWasVisible = true;
+                        simpleOverlay.Hide();
+                    }
+                });
+
                 // Calculate physical coordinates for screen capture
                 // Capture 400x400 logical pixels from upper-left corner of monitor
                 var physicalX = monitor.PhysicalBounds.X;  // Upper-left X of monitor
@@ -292,24 +295,6 @@ namespace ColorInverter
                 var physicalWidth = (int)(400 * monitor.DpiScale);
                 var physicalHeight = (int)(400 * monitor.DpiScale);
                 
-                // Debug: Show capture info once per session
-                if (!debugShownThisSession)
-                {
-                    debugShownThisSession = true;
-                    var debugInfo = $"Screen Capture Debug:\n" +
-                                   $"Monitor: {monitor.Name}\n" +
-                                   $"Physical Bounds: {monitor.PhysicalBounds}\n" +
-                                   $"Logical Bounds: {monitor.LogicalBounds}\n" +
-                                   $"DPI Scale: {monitor.DpiScale}\n" +
-                                   $"Capture coords: X={physicalX}, Y={physicalY}\n" +
-                                   $"Capture size: W={physicalWidth}, H={physicalHeight}";
-                    
-                    // Show debug info on UI thread
-                    System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
-                    {
-                        System.Windows.MessageBox.Show(debugInfo, "Screen Capture Debug", MessageBoxButton.OK, MessageBoxImage.Information);
-                    });
-                }
                 
                 // Capture screen
                 using (var bitmap = new Bitmap(physicalWidth, physicalHeight, PixelFormat.Format32bppArgb))
@@ -324,12 +309,6 @@ namespace ColorInverter
                         }
                         catch (Exception screenCaptureEx)
                         {
-                            // If screen capture fails, fill with red for debugging
-                            System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
-                            {
-                                System.Windows.MessageBox.Show($"Screen capture failed: {screenCaptureEx.Message}", 
-                                    "Screen Capture Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                            });
                             graphics.Clear(Color.Red);
                             using (var brush = new SolidBrush(Color.White))
                             using (var font = new Font("Arial", 16))
@@ -355,6 +334,9 @@ namespace ColorInverter
                     
                     bitmap.UnlockBits(bitmapData);
                     
+                    // Capture overlayWasVisible for use in UI callback
+                    var wasVisible = overlayWasVisible;
+                    
                     // Update UI on main thread with copied data
                     System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
                     {
@@ -376,36 +358,23 @@ namespace ColorInverter
                                     
                                 overlayImage.Source = bitmapSource;
                                 
-                                // Debug: Verify image was set (only show once per session)
-                                if (!imageSetDebugShown)
+                                // Show overlay window again if it was hidden for capture
+                                if (wasVisible && !simpleOverlay.IsVisible)
                                 {
-                                    imageSetDebugShown = true;
-                                    System.Windows.MessageBox.Show($"Image source set successfully!\nBitmap size: {bitmapSource.PixelWidth}x{bitmapSource.PixelHeight}\nImage control size: {overlayImage.ActualWidth}x{overlayImage.ActualHeight}", 
-                                        "Image Set Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+                                    simpleOverlay.Show();
                                 }
-                            }
-                            else
-                            {
-                                System.Windows.MessageBox.Show("overlayImage or simpleOverlay is null!", 
-                                    "Update Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                             }
                         }
                         catch (Exception ex)
                         {
-                            System.Windows.MessageBox.Show($"Error updating overlay image: {ex.Message}", 
-                                "UI Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            System.Diagnostics.Debug.WriteLine($"Error updating overlay image: {ex.Message}");
                         }
                     });
                 }
             }
             catch (Exception ex)
             {
-                // Show actual error details on UI thread
-                System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
-                {
-                    System.Windows.MessageBox.Show($"Screen capture error: {ex.Message}\n\nStack trace: {ex.StackTrace}", 
-                        "Screen Capture Exception", MessageBoxButton.OK, MessageBoxImage.Error);
-                });
+                System.Diagnostics.Debug.WriteLine($"Screen capture error: {ex.Message}");
             }
         }
         
@@ -435,21 +404,6 @@ namespace ColorInverter
             // Get video windows that might be in the captured area
             var videoWindows = GetVideoWindowsInCaptureArea(captureX, captureY, bitmap.Width, bitmap.Height);
             
-            // Debug: Show video window detection info (once per session)
-            if (!debugShownThisSession)
-            {
-                var debugInfo = $"Color Inversion Debug:\n" +
-                               $"Found {videoWindows.Count} video windows in capture area\n";
-                foreach (var window in videoWindows)
-                {
-                    debugInfo += $"  Video Window: {window}\n";
-                }
-                
-                System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
-                {
-                    System.Windows.MessageBox.Show(debugInfo, "Color Inversion Debug", MessageBoxButton.OK, MessageBoxImage.Information);
-                });
-            }
             
             // Lock bitmap for direct pixel manipulation
             var bitmapData = bitmap.LockBits(
