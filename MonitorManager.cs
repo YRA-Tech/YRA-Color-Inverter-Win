@@ -122,15 +122,14 @@ namespace ColorInverter
                 debugInfo += $"  Screen: {screen.DeviceName}, Bounds: {screen.Bounds}, Primary: {screen.Primary}\n";
             }
             
-            System.Windows.MessageBox.Show(debugInfo, "Monitor Discovery Debug", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            System.Diagnostics.Debug.WriteLine(debugInfo);
             
             // Match monitors by device name and calculate logical coordinates
             foreach (var screen in screens)
             {
                 var matchingMonitor = monitors.FirstOrDefault(m => m.Name == screen.DeviceName);
                 
-                System.Windows.MessageBox.Show($"Matching screen {screen.DeviceName} with monitor: {matchingMonitor?.Name ?? "NOT FOUND"}", 
-                    "Monitor Matching", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                System.Diagnostics.Debug.WriteLine($"Matching screen {screen.DeviceName} with monitor: {matchingMonitor?.Name ?? "NOT FOUND"}");
                 
                 if (matchingMonitor != null)
                 {
@@ -181,7 +180,7 @@ namespace ColorInverter
                 debugInfo += $"Raw DPI: {rawDpiX}x{rawDpiY} (Scale: {rawDpiX / 96.0:F2})\n" +
                            $"Angular DPI: {angularDpiX}x{angularDpiY} (Scale: {angularDpiX / 96.0:F2})";
                 
-                System.Windows.MessageBox.Show(debugInfo, "DPI Detection Debug", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                System.Diagnostics.Debug.WriteLine(debugInfo);
                 
                 // Standard DPI is 96, return scale factor
                 var calculatedScale = dpiX / 96.0;
@@ -190,8 +189,7 @@ namespace ColorInverter
                 // This is a workaround for DPI detection issues
                 if (calculatedScale == 2.0 && screen.Bounds.Width <= 1920) // Likely 1920x1080 monitor shouldn't be 2.0 scale
                 {
-                    System.Windows.MessageBox.Show($"WARNING: Overriding DPI scale from {calculatedScale} to 1.0 for {screen.DeviceName}", 
-                        "DPI Override", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                    System.Diagnostics.Debug.WriteLine($"WARNING: Overriding DPI scale from {calculatedScale} to 1.0 for {screen.DeviceName}");
                     return 1.0;
                 }
                 
@@ -200,8 +198,7 @@ namespace ColorInverter
             catch (Exception ex)
             {
                 // Show what went wrong
-                System.Windows.MessageBox.Show($"DPI detection failed for {screen.DeviceName}: {ex.Message}", 
-                    "DPI Detection Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                System.Diagnostics.Debug.WriteLine($"DPI detection failed for {screen.DeviceName}: {ex.Message}");
                 // Fallback to 1.0 if DPI detection fails
                 return 1.0;
             }

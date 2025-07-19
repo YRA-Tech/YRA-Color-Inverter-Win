@@ -143,7 +143,7 @@ namespace ColorInverter
                 var monitors = monitorManager.GetMonitors();
                 if (monitors.Count == 0)
                 {
-                    System.Windows.MessageBox.Show("No monitors detected", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Diagnostics.Debug.WriteLine("No monitors detected");
                     return;
                 }
 
@@ -163,7 +163,7 @@ namespace ColorInverter
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Failed to start detection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Diagnostics.Debug.WriteLine($"Failed to start detection: {ex.Message}");
             }
         }
 
@@ -258,12 +258,12 @@ namespace ColorInverter
             imageSetDebugShown = false;
             
             
-            // Start timer to capture screen at 30 FPS
+            // Start timer to capture screen once per second
             captureTimer = new System.Threading.Timer(
                 callback: _ => CaptureScreen(monitor),
                 state: null,
                 dueTime: 0,
-                period: 33 // ~30 FPS
+                period: 1000 // 1 second
             );
         }
         
