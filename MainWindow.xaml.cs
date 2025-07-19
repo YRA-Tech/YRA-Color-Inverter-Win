@@ -327,13 +327,13 @@ namespace ColorInverter
                         }
                     }
                     
-                    // Apply color modification: set all red values to 255
+                    // Apply color inversion: invert all RGB values
                     for (int y = 0; y < bitmap.Height; y++)
                     {
                         for (int x = 0; x < bitmap.Width; x++)
                         {
                             Color pixel = bitmap.GetPixel(x, y);
-                            Color newPixel = Color.FromArgb(pixel.A, 255, pixel.G, pixel.B);
+                            Color newPixel = Color.FromArgb(pixel.A, 255 - pixel.R, 255 - pixel.G, 255 - pixel.B);
                             bitmap.SetPixel(x, y, newPixel);
                         }
                     }
