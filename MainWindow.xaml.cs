@@ -224,7 +224,7 @@ namespace ColorInverter
                 WindowStyle = WindowStyle.None,
                 ResizeMode = ResizeMode.NoResize,
                 AllowsTransparency = true,
-                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 0, 0, 0)), // Solid black background
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 0, 255)), // Bright magenta background for testing
                 Topmost = true,
                 ShowInTaskbar = true, // Show in taskbar for debugging
                 WindowState = WindowState.Normal,
@@ -259,6 +259,10 @@ namespace ColorInverter
                     simpleOverlay.Topmost = true;
                 }
             };
+            
+            // Debug: Pause to show magenta window before starting screen capture
+            System.Windows.MessageBox.Show("Overlay window should now be visible as bright magenta square. Click OK to start screen capture.", 
+                "Magenta Window Debug", MessageBoxButton.OK, MessageBoxImage.Information);
             
             // Start screen capture for the overlay
             StartScreenCapture(monitor);
@@ -417,10 +421,6 @@ namespace ColorInverter
 
         private void ApplyColorInversion(Bitmap bitmap, int captureX, int captureY)
         {
-            // Debug: Show that color inversion is being called
-            System.Windows.MessageBox.Show($"ApplyColorInversion called!\nBitmap size: {bitmap.Width}x{bitmap.Height}\nCapture pos: ({captureX},{captureY})", 
-                "Color Inversion Debug", MessageBoxButton.OK, MessageBoxImage.Information);
-            
             // Get video windows that might be in the captured area
             var videoWindows = GetVideoWindowsInCaptureArea(captureX, captureY, bitmap.Width, bitmap.Height);
             
