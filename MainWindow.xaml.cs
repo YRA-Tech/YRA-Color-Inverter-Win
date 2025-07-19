@@ -23,8 +23,6 @@ namespace ColorInverter
         private Window? simpleOverlay;
         private System.Windows.Controls.Image? overlayImage;
         private System.Threading.Timer? captureTimer;
-        private bool debugShownThisSession = false;
-        private bool imageSetDebugShown = false;
 
         public MainWindow()
         {
@@ -213,9 +211,6 @@ namespace ColorInverter
             var leftPosition = monitor.PhysicalBounds.X / dpiScale;
             var topPosition = monitor.PhysicalBounds.Y / dpiScale;
             
-            // Debug: Show window positioning info
-            System.Windows.MessageBox.Show($"Creating overlay:\nMonitor: {monitor.Name}\nDPI Scale: {dpiScale}\nPhysical Bounds: {monitor.PhysicalBounds}\nPosition: ({leftPosition},{topPosition})\nSize: 400x400", 
-                "Overlay Debug", MessageBoxButton.OK, MessageBoxImage.Information);
             
             // Create 400x400 overlay at upper-left corner of selected monitor
             simpleOverlay = new Window
@@ -260,9 +255,6 @@ namespace ColorInverter
                 }
             };
             
-            // Debug: Pause to show magenta window before starting screen capture
-            System.Windows.MessageBox.Show("Overlay window should now be visible as bright magenta square. Click OK to start screen capture.", 
-                "Magenta Window Debug", MessageBoxButton.OK, MessageBoxImage.Information);
             
             // Start screen capture for the overlay
             StartScreenCapture(monitor);
@@ -273,9 +265,6 @@ namespace ColorInverter
             // Stop any existing timer
             StopScreenCapture();
             
-            // Reset debug flags for new session
-            debugShownThisSession = false;
-            imageSetDebugShown = false;
             
             
             // Start timer to capture screen once per second
