@@ -95,11 +95,10 @@ namespace ColorInverter
                     inverterCore = new ColorInverterCore(selectedMonitor.PhysicalBounds, videoDetector);
                     inverterCore.Start();
                     
-                    // Create simple overlay window with immediate capture
+                    // Create simple overlay window
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
                         CreateSimpleOverlay(selectedMonitor);
-                        CaptureScreen(selectedMonitor); // Capture immediately, no timer
                     });
                     
                     StatusLabel.Content = $"🟢 INVERTING {selectedMonitor.Name} - Press Ctrl+Shift+I to toggle";
@@ -247,6 +246,9 @@ namespace ColorInverter
             simpleOverlay.Show();
             
             // Don't activate or bring into view to avoid system notifications
+            
+            // Capture screen immediately when overlay is created
+            CaptureScreen(monitor);
         }
 
         private void StartScreenCapture(MonitorManager.MonitorData monitor)
