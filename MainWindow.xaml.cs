@@ -236,23 +236,15 @@ namespace ColorInverter
             System.Windows.MessageBox.Show($"Creating overlay at:\nLeft: {simpleOverlay.Left}\nTop: {simpleOverlay.Top}\nSize: {simpleOverlay.Width}x{simpleOverlay.Height}\nDPI Scale: {dpiScale}x{dpiScale}\nMonitor: {monitor.Name}", 
                 "Overlay Debug", MessageBoxButton.OK, MessageBoxImage.Information);
             
-            // Create image control for screen capture display with border
+            // Create image control for screen capture display
             overlayImage = new System.Windows.Controls.Image
             {
                 Stretch = System.Windows.Media.Stretch.Fill,
-                HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                VerticalAlignment = System.Windows.VerticalAlignment.Center
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch,
+                VerticalAlignment = System.Windows.VerticalAlignment.Stretch
             };
             
-            // Add border around image for debugging
-            var border = new System.Windows.Controls.Border
-            {
-                BorderBrush = System.Windows.Media.Brushes.Red,
-                BorderThickness = new System.Windows.Thickness(2),
-                Child = overlayImage
-            };
-            
-            simpleOverlay.Content = border;
+            simpleOverlay.Content = overlayImage;
             simpleOverlay.Show();
             simpleOverlay.Activate();
             simpleOverlay.Focus();
