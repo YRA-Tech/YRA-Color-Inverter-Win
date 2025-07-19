@@ -458,10 +458,10 @@ namespace ColorInverter
                             byte red = ptr[pixelOffset + 2];
                             byte alpha = ptr[pixelOffset + 3];
                             
-                            // Invert colors (255 - value)
-                            ptr[pixelOffset] = (byte)(255 - blue);      // B
-                            ptr[pixelOffset + 1] = (byte)(255 - green); // G
-                            ptr[pixelOffset + 2] = (byte)(255 - red);   // R
+                            // Set red to 255, leave green and blue unchanged
+                            ptr[pixelOffset] = blue;      // B - unchanged
+                            ptr[pixelOffset + 1] = green; // G - unchanged
+                            ptr[pixelOffset + 2] = 255;   // R - set to maximum
                             // Keep alpha unchanged
                         }
                     }
